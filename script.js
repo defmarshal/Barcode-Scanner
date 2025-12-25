@@ -94,20 +94,33 @@ function simpanBarang() {
 
 // ================= SCANNER =================
 function startScan() {
-    if (scannerOn) return;
-    scannerOn = true;
-
     document.getElementById("scanner").style.display = "block";
 
     Quagga.init({
         inputStream: {
             type: "LiveStream",
             target: document.querySelector("#scanner"),
-            constraints: { facingMode: "environment" }
+            constraints: {
+                facingMode: "environment",
+                width: { ideal: 640 },
+                height: { ideal: 480 }
+            }
         },
-        decoder: { readers: ["ean_reader"] }
+        locator: {
+            patchSize: "medium",
+            halfSample: true
+        },
+        locate: true,
+        decoder: {
+            readers: ["ean_reader", "ean_13_reader"]
+        },
+        frequency: 10
     }, err => {
-        if (!err) Quagga.start();
+        if (err) {
+            alert("Scanner error: " + err);
+            return;
+        }
+        Quagga.start();
     });
 }
 
