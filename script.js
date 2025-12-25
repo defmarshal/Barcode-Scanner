@@ -1,7 +1,3 @@
-window.onerror = function(msg, url, line, col) {
-    alert("JS ERROR:\n" + msg + "\nLine: " + line);
-};
-
 /***********************
  * GLOBAL STATE
  ***********************/
@@ -21,7 +17,7 @@ function saveDB(db) {
 }
 
 /***********************
- * CART LOGIC
+ * CART
  ***********************/
 function saveCart() {
     localStorage.setItem("cart", JSON.stringify(cart));
@@ -30,7 +26,6 @@ function saveCart() {
 function renderCart() {
     const list = document.getElementById("list");
     list.innerHTML = "";
-
     let total = 0;
 
     for (const code in cart) {
@@ -61,7 +56,7 @@ function renderCart() {
 
 function addToCart(code, data) {
     if (cart[code]) {
-        cart[code].qty += 1;
+        cart[code].qty++;
     } else {
         cart[code] = {
             nama: data.nama,
@@ -74,11 +69,8 @@ function addToCart(code, data) {
 
 function ubahQty(code, delta) {
     if (!cart[code]) return;
-
     cart[code].qty += delta;
-    if (cart[code].qty <= 0) {
-        delete cart[code];
-    }
+    if (cart[code].qty <= 0) delete cart[code];
     renderCart();
 }
 
@@ -101,7 +93,7 @@ function simpanBarang() {
     const harga = parseInt(document.getElementById("harga").value);
 
     if (!nama || !harga) {
-        alert("Nama dan harga harus diisi");
+        alert("Nama dan harga wajib diisi");
         return;
     }
 
@@ -114,7 +106,7 @@ function simpanBarang() {
 }
 
 /***********************
- * BARCODE SCANNER (QUAGGA)
+ * BARCODE SCANNER (QUAGGA2)
  ***********************/
 function startScan() {
     if (quaggaActive) return;
@@ -139,7 +131,7 @@ function startScan() {
             halfSample: true
         },
         decoder: {
-            readers: ["ean_13_reader"]
+            readers: ["ean_reader"] // 🔥 INI YANG BENAR
         }
     }, function (err) {
         if (err) {
@@ -151,12 +143,12 @@ function startScan() {
     });
 }
 
-let lastScanTime = 0;
+let lastScan = 0;
 
 Quagga.onDetected(function (result) {
     const now = Date.now();
-    if (now - lastScanTime < 1500) return;
-    lastScanTime = now;
+    if (now - lastScan < 1500) return;
+    lastScan = now;
 
     const code = result.codeResult.code;
 
@@ -180,4 +172,3 @@ Quagga.onDetected(function (result) {
  * INIT
  ***********************/
 renderCart();
-
