@@ -2,20 +2,25 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Scanner Belanja Personal</title>
+    <title>Kasir Personal</title>
     <script src="https://unpkg.com/@ericblade/quagga2/dist/quagga.js"></script>
     <style>
         body { font-family: Arial; padding: 10px; }
-        #scanner { height: 280px; }
-        table { width: 100%; margin-top: 10px; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 6px; }
-        .total { font-size: 20px; font-weight: bold; margin-top: 10px; }
-        #form { display: none; margin-top: 10px; }
+        button { padding: 6px 10px; margin: 3px; }
+        #scanner { height: 260px; display: none; margin-top: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+        .total { font-size: 22px; font-weight: bold; margin-top: 10px; }
+        #form { display: none; margin-top: 10px; border: 1px solid #ccc; padding: 10px; }
     </style>
 </head>
 <body>
 
-<h2>Scan Barang</h2>
+<h2>Kasir Personal</h2>
+
+<button onclick="startScan()">📷 Scan Barang</button>
+<button onclick="resetCart()">🗑️ Reset Belanja</button>
+
 <div id="scanner"></div>
 
 <div id="form">
@@ -27,7 +32,13 @@
 
 <table>
     <thead>
-        <tr><th>Barang</th><th>Harga</th></tr>
+        <tr>
+            <th>Barang</th>
+            <th>Harga</th>
+            <th>Qty</th>
+            <th>Subtotal</th>
+            <th>Aksi</th>
+        </tr>
     </thead>
     <tbody id="list"></tbody>
 </table>

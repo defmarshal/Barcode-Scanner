@@ -1,33 +1,87 @@
-let total = 0;
+let cart = JSON.parse(localStorage.getItem("cart")) || {};
 let lastCode = null;
+let scannerOn = false;
 
-// Ambil database dari LocalStorage
+// ================= DATABASE BARANG =================
 function getDB() {
     return JSON.parse(localStorage.getItem("barangDB")) || {};
 }
 
-// Simpan database
 function saveDB(db) {
     localStorage.setItem("barangDB", JSON.stringify(db));
 }
 
-// Tambah ke list belanja
-function addToCart(item) {
-    total += item.harga;
-    document.getElementById("list").innerHTML += `
-        <tr>
-            <td>${item.nama}</td>
-            <td>Rp ${item.harga}</td>
-        </tr>
-    `;
-    document.getElementById("total").innerText = total;
+// ================= CART =================
+function saveCart() {
+    localStorage.setItem("cart", JSON.stringify(cart));
 }
 
-// Simpan barang baru
+function renderCart() {
+    const list = document.getElementById("list");
+    list.innerHTML = "";
+    let total = 0;
+
+    for (const code in cart) {
+        const i = cart[code];
+        const subtotal = i.harga * i.qty;
+        total += subtotal;
+
+        list.innerHTML += `
+            <tr>
+                <td>${i.nama}</td>
+                <td>Rp ${i.harga}</td>
+                <td>
+                    <button onclick="ubahQty('${code}',-1)">➖</button>
+                    ${i.qty}
+                    <button onclick="ubahQty('${code}',1)">➕</button>
+                </td>
+                <td>Rp ${subtotal}</td>
+                <td>
+                    <button onclick="hapusItem('${code}')">❌</button>
+                </td>
+            </tr>
+        `;
+    }
+
+    document.getElementById("total").innerText = total;
+    saveCart();
+}
+
+function addToCart(code, item) {
+    if (cart[code]) {
+        cart[code].qty += 1;
+    } else {
+        cart[code] = {
+            nama: item.nama,
+            harga: item.harga,
+            qty: 1
+        };
+    }
+    renderCart();
+}
+
+function ubahQty(code, delta) {
+    cart[code].qty += delta;
+    if (cart[code].qty <= 0) delete cart[code];
+    renderCart();
+}
+
+function hapusItem(code) {
+    delete cart[code];
+    renderCart();
+}
+
+function resetCart() {
+    if (confirm("Reset semua belanja?")) {
+        cart = {};
+        renderCart();
+    }
+}
+
+// ================= BARANG BARU =================
 function simpanBarang() {
     const nama = document.getElementById("nama").value;
     const harga = parseInt(document.getElementById("harga").value);
-
     if (!nama || !harga) return alert("Lengkapi data");
 
     const db = getDB();
@@ -35,38 +89,45 @@ function simpanBarang() {
     saveDB(db);
 
     document.getElementById("form").style.display = "none";
-    addToCart(db[lastCode]);
+    addToCart(lastCode, db[lastCode]);
 }
 
-// Inisialisasi scanner
-Quagga.init({
-    inputStream: {
-        type: "LiveStream",
-        target: document.querySelector("#scanner"),
-        constraints: { facingMode: "environment" }
-    },
-    decoder: {
-        readers: ["ean_reader"]
-    }
-}, err => {
-    if (!err) Quagga.start();
-});
+// ================= SCANNER =================
+function startScan() {
+    if (scannerOn) return;
+    scannerOn = true;
 
-// Saat barcode terdeteksi
+    document.getElementById("scanner").style.display = "block";
+
+    Quagga.init({
+        inputStream: {
+            type: "LiveStream",
+            target: document.querySelector("#scanner"),
+            constraints: { facingMode: "environment" }
+        },
+        decoder: { readers: ["ean_reader"] }
+    }, err => {
+        if (!err) Quagga.start();
+    });
+}
+
 Quagga.onDetected(data => {
     const code = data.codeResult.code;
-    Quagga.stop();
-
-    const db = getDB();
     lastCode = code;
 
+    Quagga.stop();
+    scannerOn = false;
+    document.getElementById("scanner").style.display = "none";
+
+    const db = getDB();
     if (db[code]) {
-        addToCart(db[code]);
+        addToCart(code, db[code]);
     } else {
         document.getElementById("form").style.display = "block";
         document.getElementById("nama").value = "";
         document.getElementById("harga").value = "";
     }
-
-    setTimeout(() => Quagga.start(), 1500);
 });
+
+// render awal
+renderCart();
