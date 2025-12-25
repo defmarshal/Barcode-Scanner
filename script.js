@@ -1,9 +1,13 @@
+/***********************
+ * GLOBAL STATE
+ ***********************/
 let cart = JSON.parse(localStorage.getItem("cart")) || {};
 let lastCode = null;
-let scannerOn = false;
-let quaggaRunning = false;
+let quaggaActive = false;
 
-// ================= DATABASE BARANG =================
+/***********************
+ * DATABASE BARANG
+ ***********************/
 function getDB() {
     return JSON.parse(localStorage.getItem("barangDB")) || {};
 }
@@ -12,7 +16,9 @@ function saveDB(db) {
     localStorage.setItem("barangDB", JSON.stringify(db));
 }
 
-// ================= CART =================
+/***********************
+ * CART LOGIC
+ ***********************/
 function saveCart() {
     localStorage.setItem("cart", JSON.stringify(cart));
 }
@@ -20,21 +26,22 @@ function saveCart() {
 function renderCart() {
     const list = document.getElementById("list");
     list.innerHTML = "";
+
     let total = 0;
 
     for (const code in cart) {
-        const i = cart[code];
-        const subtotal = i.harga * i.qty;
+        const item = cart[code];
+        const subtotal = item.harga * item.qty;
         total += subtotal;
 
         list.innerHTML += `
             <tr>
-                <td>${i.nama}</td>
-                <td>Rp ${i.harga}</td>
+                <td>${item.nama}</td>
+                <td>Rp ${item.harga}</td>
                 <td>
-                    <button onclick="ubahQty('${code}',-1)">➖</button>
-                    ${i.qty}
-                    <button onclick="ubahQty('${code}',1)">➕</button>
+                    <button onclick="ubahQty('${code}', -1)">➖</button>
+                    ${item.qty}
+                    <button onclick="ubahQty('${code}', 1)">➕</button>
                 </td>
                 <td>Rp ${subtotal}</td>
                 <td>
@@ -48,13 +55,13 @@ function renderCart() {
     saveCart();
 }
 
-function addToCart(code, item) {
+function addToCart(code, data) {
     if (cart[code]) {
         cart[code].qty += 1;
     } else {
         cart[code] = {
-            nama: item.nama,
-            harga: item.harga,
+            nama: data.nama,
+            harga: data.harga,
             qty: 1
         };
     }
@@ -62,8 +69,12 @@ function addToCart(code, item) {
 }
 
 function ubahQty(code, delta) {
+    if (!cart[code]) return;
+
     cart[code].qty += delta;
-    if (cart[code].qty <= 0) delete cart[code];
+    if (cart[code].qty <= 0) {
+        delete cart[code];
+    }
     renderCart();
 }
 
@@ -73,17 +84,22 @@ function hapusItem(code) {
 }
 
 function resetCart() {
-    if (confirm("Reset semua belanja?")) {
-        cart = {};
-        renderCart();
-    }
+    if (!confirm("Reset semua belanja?")) return;
+    cart = {};
+    renderCart();
 }
 
-// ================= BARANG BARU =================
+/***********************
+ * BARANG BARU
+ ***********************/
 function simpanBarang() {
-    const nama = document.getElementById("nama").value;
+    const nama = document.getElementById("nama").value.trim();
     const harga = parseInt(document.getElementById("harga").value);
-    if (!nama || !harga) return alert("Lengkapi data");
+
+    if (!nama || !harga) {
+        alert("Nama dan harga harus diisi");
+        return;
+    }
 
     const db = getDB();
     db[lastCode] = { nama, harga };
@@ -93,10 +109,12 @@ function simpanBarang() {
     addToCart(lastCode, db[lastCode]);
 }
 
-// ================= SCANNER =================
+/***********************
+ * BARCODE SCANNER (QUAGGA)
+ ***********************/
 function startScan() {
-    if (quaggaRunning) return;
-    quaggaRunning = true;
+    if (quaggaActive) return;
+    quaggaActive = true;
 
     const scanner = document.getElementById("scanner");
     scanner.style.display = "block";
@@ -111,18 +129,18 @@ function startScan() {
                 height: { ideal: 480 }
             }
         },
+        locate: true,
         locator: {
             patchSize: "medium",
             halfSample: true
         },
-        locate: true,
         decoder: {
-            readers: ["ean_13_reader", "ean_reader"]
+            readers: ["ean_13_reader"]
         }
     }, function (err) {
         if (err) {
-            alert("Camera error: " + err);
-            quaggaRunning = false;
+            alert("CameraError: " + err);
+            quaggaActive = false;
             return;
         }
         Quagga.start();
@@ -131,7 +149,7 @@ function startScan() {
 
 let lastScanTime = 0;
 
-Quagga.onDetected(result => {
+Quagga.onDetected(function (result) {
     const now = Date.now();
     if (now - lastScanTime < 1500) return;
     lastScanTime = now;
@@ -139,7 +157,7 @@ Quagga.onDetected(result => {
     const code = result.codeResult.code;
 
     Quagga.stop();
-    quaggaRunning = false;
+    quaggaActive = false;
     document.getElementById("scanner").style.display = "none";
 
     lastCode = code;
@@ -149,9 +167,12 @@ Quagga.onDetected(result => {
         addToCart(code, db[code]);
     } else {
         document.getElementById("form").style.display = "block";
+        document.getElementById("nama").value = "";
+        document.getElementById("harga").value = "";
     }
 });
 
-
-// render awal
+/***********************
+ * INIT
+ ***********************/
 renderCart();
