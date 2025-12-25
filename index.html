@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Scanner Belanja Personal</title>
+    <script src="https://unpkg.com/@ericblade/quagga2/dist/quagga.js"></script>
+    <style>
+        body { font-family: Arial; padding: 10px; }
+        #scanner { height: 280px; }
+        table { width: 100%; margin-top: 10px; border-collapse: collapse; }
+        th, td { border: 1px solid #ccc; padding: 6px; }
+        .total { font-size: 20px; font-weight: bold; margin-top: 10px; }
+        #form { display: none; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Scan Barang</h2>
+<div id="scanner"></div>
+
+<div id="form">
+    <h3>Barang Baru</h3>
+    <input id="nama" placeholder="Nama Barang"><br><br>
+    <input id="harga" type="number" placeholder="Harga"><br><br>
+    <button onclick="simpanBarang()">Simpan</button>
+</div>
+
+<table>
+    <thead>
+        <tr><th>Barang</th><th>Harga</th></tr>
+    </thead>
+    <tbody id="list"></tbody>
+</table>
+
+<div class="total">Total: Rp <span id="total">0</span></div>
+
+<script src="script.js"></script>
+</body>
+</html>
