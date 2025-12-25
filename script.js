@@ -1,6 +1,7 @@
 let cart = JSON.parse(localStorage.getItem("cart")) || {};
 let lastCode = null;
 let scannerOn = false;
+let quaggaRunning = false;
 
 // ================= DATABASE BARANG =================
 function getDB() {
@@ -94,12 +95,16 @@ function simpanBarang() {
 
 // ================= SCANNER =================
 function startScan() {
-    document.getElementById("scanner").style.display = "block";
+    if (quaggaRunning) return;
+    quaggaRunning = true;
+
+    const scanner = document.getElementById("scanner");
+    scanner.style.display = "block";
 
     Quagga.init({
         inputStream: {
             type: "LiveStream",
-            target: document.querySelector("#scanner"),
+            target: scanner,
             constraints: {
                 facingMode: "environment",
                 width: { ideal: 640 },
@@ -112,35 +117,41 @@ function startScan() {
         },
         locate: true,
         decoder: {
-            readers: ["ean_reader", "ean_13_reader"]
-        },
-        frequency: 10
-    }, err => {
+            readers: ["ean_13_reader", "ean_reader"]
+        }
+    }, function (err) {
         if (err) {
-            alert("Scanner error: " + err);
+            alert("Camera error: " + err);
+            quaggaRunning = false;
             return;
         }
         Quagga.start();
     });
 }
 
-Quagga.onDetected(data => {
-    const code = data.codeResult.code;
-    lastCode = code;
+let lastScanTime = 0;
+
+Quagga.onDetected(result => {
+    const now = Date.now();
+    if (now - lastScanTime < 1500) return;
+    lastScanTime = now;
+
+    const code = result.codeResult.code;
 
     Quagga.stop();
-    scannerOn = false;
+    quaggaRunning = false;
     document.getElementById("scanner").style.display = "none";
+
+    lastCode = code;
 
     const db = getDB();
     if (db[code]) {
         addToCart(code, db[code]);
     } else {
         document.getElementById("form").style.display = "block";
-        document.getElementById("nama").value = "";
-        document.getElementById("harga").value = "";
     }
 });
+
 
 // render awal
 renderCart();
