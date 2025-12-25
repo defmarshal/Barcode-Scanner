@@ -1,3 +1,7 @@
+window.onerror = function(msg, url, line, col) {
+    alert("JS ERROR:\n" + msg + "\nLine: " + line);
+};
+
 /***********************
  * GLOBAL STATE
  ***********************/
@@ -176,3 +180,4 @@ Quagga.onDetected(function (result) {
  * INIT
  ***********************/
 renderCart();
+
